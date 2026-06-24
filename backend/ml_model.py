@@ -1,9 +1,8 @@
 """
 EwakoVision AI - Core AI Layer
-Arsitektur: YOLOv8 Object Detection
-Keunggulan: Deteksi bounding box presisi.
-Sebagai prototipe, model menggunakan yolov8n.pt (COCO Dataset).
-Gantilah file yolov8n.pt dengan model sampah kustom Anda kelak (trash_yolov8.pt).
+Arsitektur: YOLOv8 Object Detection (Dinamis)
+Sistem membaca daftar kelas dari model .pt secara otomatis.
+Mendukung model 1-kelas (Garbage) maupun multi-kelas (Roboflow/COCO).
 """
 
 from ultralytics import YOLO
@@ -16,21 +15,43 @@ import os
 # ============================================================
 print("[EwakoVision AI] Memuat model YOLOv8...")
 
-# Cek jika ada model custom, jika tidak pakai yolov8n
 model_path = "trash_yolov8.pt"
 if not os.path.exists(model_path):
-    model_path = "yolov8n.pt" # Akan mendownload otomatis saat pertama kali
+    model_path = "yolov8n.pt"
 
 YOLO_MODEL = YOLO(model_path)
 print(f"[EwakoVision AI] Model YOLOv8 ({model_path}) berhasil dimuat! [OK]")
 
+# Cetak daftar kelas model ke konsol agar developer bisa mengaudit
+print(f"[EwakoVision AI] Total kelas: {len(YOLO_MODEL.names)}")
+for idx, name in YOLO_MODEL.names.items():
+    print(f"  Index {idx}: {name}")
+
 # ============================================================
-# PEMETAAN KELAS COCO (yolov8n) KE KATEGORI SAMPAH
-# Ini hanya sementara untuk demo. Jika Anda memakai model
-# khusus sampah nanti, sesuaikan dict ini dengan kelas model Anda.
+# PEMETAAN DINAMIS: KELAS MODEL -> KATEGORI SAMPAH
+# Dictionary ini dibaca secara dinamis berdasarkan output
+# model.names. Tambahkan entry baru di sini jika Anda
+# mengganti model dengan yang multi-kelas.
 # ============================================================
 KATEGORI_MAP = {
-    # COCO Classes yang relevan dengan sampah
+    # === Model 1-Kelas (Garbage Detector) ===
+    "Garbage": "Anorganik / Sampah Umum",
+    "garbage": "Anorganik / Sampah Umum",
+
+    # === Model Multi-Kelas (Roboflow TrashNet / Custom) ===
+    "plastic": "Anorganik / Daur Ulang",
+    "paper": "Anorganik / Daur Ulang",
+    "cardboard": "Anorganik / Daur Ulang",
+    "metal": "Anorganik / Daur Ulang",
+    "glass": "Anorganik / Daur Ulang",
+    "trash": "Anorganik / Residu",
+    "organic": "Organik / Kompos",
+    "biological": "Organik / Kompos",
+    "battery": "B3 (Bahan Berbahaya & Beracun)",
+    "shoes": "Anorganik / Residu",
+    "clothes": "Anorganik / Residu",
+
+    # === Model COCO (yolov8n.pt fallback) ===
     "bottle": "Anorganik / Daur Ulang",
     "cup": "Anorganik / Daur Ulang",
     "wine glass": "Anorganik / Daur Ulang",
@@ -43,119 +64,93 @@ KATEGORI_MAP = {
     "orange": "Organik / Kompos",
     "broccoli": "Organik / Kompos",
     "carrot": "Organik / Kompos",
-    "potted plant": "Organik / Kompos",
     "cell phone": "B3 (Bahan Berbahaya & Beracun) / E-Waste",
-    "mouse": "B3 (Bahan Berbahaya & Beracun) / E-Waste",
-    "remote": "B3 (Bahan Berbahaya & Beracun) / E-Waste",
     "keyboard": "B3 (Bahan Berbahaya & Beracun) / E-Waste",
     "book": "Anorganik / Daur Ulang",
     "scissors": "Anorganik / Daur Ulang",
-    "teddy bear": "Anorganik / Residu",
     "toothbrush": "Anorganik / Residu",
-    "vase": "Anorganik / Daur Ulang",
-    
-    # Custom TrashNet / Roboflow Classes
-    "Garbage": "Anorganik / Residu",
-    "garbage": "Anorganik / Residu",
-    "trash": "Anorganik / Residu",
-    "plastic": "Anorganik / Daur Ulang",
-    "paper": "Anorganik / Daur Ulang",
-    "metal": "Anorganik / Daur Ulang",
-    "glass": "Anorganik / Daur Ulang",
-    "cardboard": "Anorganik / Daur Ulang"
 }
 
-# Terjemahan ID agar lebih enak dibaca juri
+# Terjemahan kelas ke Bahasa Indonesia
 TERJEMAHAN_LOKAL = {
+    # === Model 1-Kelas ===
+    "Garbage": "Sampah Terdeteksi",
+    "garbage": "Sampah Terdeteksi",
+
+    # === Model Multi-Kelas ===
+    "plastic": "Plastik",
+    "paper": "Kertas",
+    "cardboard": "Kardus",
+    "metal": "Logam / Kaleng",
+    "glass": "Kaca / Beling",
+    "trash": "Sampah Campuran",
+    "organic": "Sampah Organik",
+    "biological": "Limbah Biologis",
+    "battery": "Baterai Bekas",
+    "shoes": "Sepatu Bekas",
+    "clothes": "Pakaian Bekas",
+
+    # === Model COCO ===
     "bottle": "Botol Bekas",
     "cup": "Gelas Plastik/Kertas",
     "wine glass": "Gelas Kaca",
-    "fork": "Garpu Plastik/Logam",
+    "fork": "Garpu",
     "knife": "Pisau",
-    "spoon": "Sendok Plastik/Logam",
+    "spoon": "Sendok",
     "bowl": "Mangkuk",
-    "banana": "Kulit Pisang (Organik)",
-    "apple": "Sisa Apel (Organik)",
-    "orange": "Kulit Jeruk (Organik)",
-    "broccoli": "Sisa Sayur (Organik)",
-    "carrot": "Sisa Sayur (Organik)",
-    "potted plant": "Tanaman",
+    "banana": "Kulit Pisang",
+    "apple": "Sisa Apel",
+    "orange": "Kulit Jeruk",
+    "broccoli": "Sisa Sayur",
+    "carrot": "Sisa Sayur",
     "cell phone": "Ponsel Bekas",
-    "mouse": "Mouse Komputer Bekas",
-    "remote": "Remote Bekas",
     "keyboard": "Keyboard Bekas",
-    "book": "Buku Bekas",
+    "book": "Buku/Kertas Bekas",
     "scissors": "Gunting",
     "toothbrush": "Sikat Gigi Bekas",
-    "vase": "Vas Pecah",
-    
-    # Custom TrashNet / Roboflow Classes
-    "Garbage": "Sampah Umum",
-    "garbage": "Sampah Umum",
-    "trash": "Sampah Umum",
-    "plastic": "Plastik",
-    "paper": "Kertas",
-    "metal": "Logam/Kaleng",
-    "glass": "Kaca/Beling",
-    "cardboard": "Kardus"
 }
 
 def predict_object(image_bytes):
     """
     Fungsi utama prediksi objek menggunakan YOLOv8.
     Mengembalikan (nama_objek, kategori, akurasi, bbox).
-    Bbox adalah dictionary {"x1", "y1", "x2", "y2"} dalam format persentase (0-1).
+    Bbox berupa dict {x1, y1, x2, y2} dalam format persentase (0-1).
     """
     try:
-        # 1. Buka gambar dari bytes
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_width, img_height = image.size
-        
-        # 2. Jalankan inferensi YOLOv8
+
         results = YOLO_MODEL(image, verbose=False)
-        result = results[0]  # Ambil hasil pertama (karena input hanya 1 gambar)
-        
-        # Cek apakah ada objek yang terdeteksi
+        result = results[0]
+
         if len(result.boxes) == 0:
             return "Tidak Ada Objek", "Tidak Diketahui", 0.0, None
-            
-        # 3. Urutkan berdasarkan confidence (akurasi) tertinggi
-        boxes = result.boxes
-        best_box = None
-        best_conf = 0.0
-        
-        for box in boxes:
-            conf = float(box.conf[0])
-            if conf > best_conf:
-                best_conf = conf
-                best_box = box
-                
-        if best_box is None:
-             return "Tidak Ada Objek", "Tidak Diketahui", 0.0, None
-             
-        # Ambil kelas hasil
+
+        # Cari deteksi dengan confidence tertinggi
+        best_box = max(result.boxes, key=lambda b: float(b.conf[0]))
+        best_conf = float(best_box.conf[0])
+
+        # Baca nama kelas secara DINAMIS dari model
         cls_id = int(best_box.cls[0])
         cls_name = YOLO_MODEL.names[cls_id]
-        
-        # Terjemahkan ke nama lokal
+
+        # Terjemahkan ke nama lokal & kategori
         nama_tampil = TERJEMAHAN_LOKAL.get(cls_name, cls_name.title())
-        kategori = KATEGORI_MAP.get(cls_name, "Anorganik / Daur Ulang")
-        
-        # Koordinat bounding box (x_min, y_min, x_max, y_max)
+        kategori = KATEGORI_MAP.get(cls_name, "Anorganik / Sampah Umum")
+
+        # Normalisasi bounding box ke format persentase (0-1)
         x1, y1, x2, y2 = best_box.xyxy[0].tolist()
-        
-        # Normalisasi ke format persentase (0-1) agar kompatibel dengan UI frontend (berapapun ukurannya)
         bbox_normalized = {
-            "x1": x1 / img_width,
-            "y1": y1 / img_height,
-            "x2": x2 / img_width,
-            "y2": y2 / img_height
+            "x1": round(x1 / img_width, 4),
+            "y1": round(y1 / img_height, 4),
+            "x2": round(x2 / img_width, 4),
+            "y2": round(y2 / img_height, 4)
         }
-        
-        print(f"[EwakoVision AI] Deteksi: {nama_tampil} ({best_conf*100:.2f}%) BBox: {bbox_normalized}")
-        
+
+        print(f"[EwakoVision AI] Deteksi: '{cls_name}' -> '{nama_tampil}' | Kategori: {kategori} | Akurasi: {best_conf*100:.2f}% | BBox: {bbox_normalized}")
+
         return nama_tampil, kategori, best_conf, bbox_normalized
-        
+
     except Exception as e:
         print(f"[EwakoVision AI] Error pada prediksi YOLOv8: {str(e)}")
-        return "Objek Tidak Dikenali", "Anorganik / Daur Ulang", 0.0, None
+        return "Objek Tidak Dikenali", "Anorganik / Sampah Umum", 0.0, None
