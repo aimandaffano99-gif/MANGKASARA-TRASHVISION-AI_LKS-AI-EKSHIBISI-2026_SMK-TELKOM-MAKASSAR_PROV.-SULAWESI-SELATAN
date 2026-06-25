@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef } from 'react';
 import Webcam from 'react-webcam';
-import { Camera, Sparkles, AlertCircle, ScanLine, Trash2, Leaf, ShieldCheck, RefreshCcw } from 'lucide-react';
+import { Camera, Sparkles, AlertCircle, ScanLine, Trash2, Leaf, ShieldCheck, RefreshCcw, ThumbsUp, ThumbsDown, CheckCircle2 } from 'lucide-react';
 
 interface AnalysisResult {
   success: boolean;
@@ -26,11 +26,13 @@ export default function EwakoVisionDashboard() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<'yes' | 'no' | null>(null);
 
   const handleReset = () => {
     setResult(null);
     setCapturedImage(null);
     setError(null);
+    setFeedback(null);
   };
 
   const base64ToBlob = (base64Data: string) => {
@@ -54,6 +56,7 @@ export default function EwakoVisionDashboard() {
 
     setLoading(true);
     setError(null);
+    setFeedback(null);
     setCapturedImage(imageSrc); // Mengunci (freeze) frame kamera
 
     try {
@@ -311,6 +314,36 @@ export default function EwakoVisionDashboard() {
                       : "Rekomendasi tidak tersedia."
                     }
                   </p>
+                </div>
+
+                {/* Human-in-the-Loop Feedback UI */}
+                <div className="mt-2 bg-black/40 border border-white/5 p-5 rounded-2xl">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3 block">Evaluasi Manusia (Human-in-the-Loop)</span>
+                  
+                  {feedback === null ? (
+                    <div className="flex flex-col gap-3">
+                      <p className="text-sm font-medium text-slate-300">Apakah hasil deteksi ini sesuai dengan jenis sampah Anda?</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button 
+                          onClick={() => setFeedback('yes')}
+                          className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-400 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <ThumbsUp className="w-3.5 h-3.5" /> Ya, Sesuai
+                        </button>
+                        <button 
+                          onClick={() => setFeedback('no')}
+                          className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-500/50 text-rose-400 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <ThumbsDown className="w-3.5 h-3.5" /> Kurang Tepat
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20 animate-in fade-in zoom-in duration-300">
+                      <CheckCircle2 className="w-5 h-5" />
+                      <p className="text-sm font-medium">Terima kasih! Masukan Anda membantu EwakoVision AI belajar menjadi lebih pintar.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Reset Button */}

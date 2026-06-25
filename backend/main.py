@@ -38,8 +38,11 @@ def analyze_endpoint(
         # Ambil API key dari parameter atau environment variable
         final_api_key = api_key or os.getenv("GEMINI_API_KEY")
         
-        # 2. Jalankan Expansion AI Layer (Rekomendasi Konten)
-        rekomendasi_konten = dapatkan_rekomendasi_ewako(label_objek, kategori_sampah, final_api_key)
+        # 2. Jalankan Expansion AI Layer (Rekomendasi & Verifikasi Threshold)
+        # Jika akurasi < 50%, Gemini Multimodal akan mengambil alih untuk memvalidasi gambar
+        new_label, new_kategori, rekomendasi_konten = dapatkan_rekomendasi_ewako(
+            label_objek, kategori_sampah, akurasi, image_bytes, final_api_key
+        )
         
         # 3. Tentukan status konektivitas sistem yang berjalan
         mode_sistem = "Online (Gemini Enhanced)" if final_api_key else "Offline (Local Core Only)"
@@ -48,8 +51,8 @@ def analyze_endpoint(
             "success": True,
             "mode": mode_sistem,
             "data": {
-                "object_detected": label_objek,
-                "category": kategori_sampah,
+                "object_detected": new_label,
+                "category": new_kategori,
                 "confidence_score": round(akurasi * 100, 2),
                 "bounding_box": bbox,
                 "action_recommendation": rekomendasi_konten
