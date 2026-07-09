@@ -100,6 +100,62 @@ export default function ScannerPage() {
     return { points, co2 };
   };
 
+  const deriveMaterialRecommendation = (object_detected: string, category: string) => {
+    const lowerObj = object_detected.toLowerCase();
+    const lowerCat = category.toLowerCase();
+
+    if (lowerObj.includes("kertas") || lowerObj.includes("paper") || lowerObj.includes("kardus") || lowerObj.includes("cardboard") || lowerCat.includes("kertas") || lowerCat.includes("kardus")) {
+      return "Pilahan kertas kering, lipat rapi, dan masukkan ke bin Anorganik. Siap disetor ke BSU terdekat.";
+    }
+
+    if (lowerObj.includes("plastik") || lowerObj.includes("plastic") || lowerObj.includes("botol") || lowerObj.includes("kemasan") || lowerCat.includes("plastik")) {
+      return "Pisahkan plastik bersih dan kering, kumpulkan ke bin Anorganik, lalu kirim ke bank sampah atau daur ulang.";
+    }
+
+    if (lowerObj.includes("kaca") || lowerObj.includes("glass") || lowerCat.includes("kaca")) {
+      return "Kumpulkan kaca dalam kondisi utuh atau bungkus rapih, masukkan ke bin Anorganik, dan bawa ke pusat daur ulang terdekat.";
+    }
+
+    if (lowerObj.includes("metal") || lowerObj.includes("kaleng") || lowerObj.includes("logam") || lowerCat.includes("metal")) {
+      return "Bersihkan logam atau kaleng jika perlu, lalu masukkan ke bin Anorganik untuk pemilahan dan daur ulang.";
+    }
+
+    if (lowerCat.includes("organik") || lowerCat.includes("sisa makanan") || lowerObj.includes("sisa makanan") || lowerObj.includes("makanan")) {
+      return "Pisahkan sisa makanan basah ke tempat sampah organik atau kompos, hindari mencampurkannya dengan sampah anorganik.";
+    }
+
+    if (lowerCat.includes("b3") || lowerObj.includes("baterai") || lowerObj.includes("elektronik") || lowerObj.includes("lampu") || lowerObj.includes("cairan")) {
+      return "Masukkan limbah B3 ke wadah tertutup, pisahkan dari sampah biasa, dan serahkan ke bank sampah atau fasilitas resmi.";
+    }
+
+    return "Pisahkan material ini sesuai kategori, kumpulkan di tempat terpisah, dan bawa ke bank sampah atau pusat daur ulang terdekat untuk penanganan lebih lanjut.";
+  };
+
+  const isGenericFallbackRecommendation = (text: string) => {
+    const normalized = text.trim().toLowerCase();
+    return !normalized || normalized.includes("tinjau hasil prediksi");
+  };
+
+  const getExecutionRecommendation = (result: AnalysisResult | null) => {
+    if (offlineMode) {
+      return "Rekomendasi Gemini tidak tersedia dalam mode offline. Pemilahan dialihkan ke panduan lokal.";
+    }
+
+    if (!result) {
+      return "Rekomendasi tidak tersedia.";
+    }
+
+    if (result.data.confidence_score < 85) {
+      return deriveMaterialRecommendation(result.data.object_detected, result.data.category);
+    }
+
+    if (isGenericFallbackRecommendation(result.data.action_recommendation)) {
+      return deriveMaterialRecommendation(result.data.object_detected, result.data.category);
+    }
+
+    return result.data.action_recommendation;
+  };
+
   const handleFeedback = (type: "yes" | "no") => {
     setFeedback(type);
 
@@ -193,9 +249,7 @@ export default function ScannerPage() {
     setTotalPoints((prev) => prev + 25);
   };
 
-  const recommendationText = offlineMode
-    ? "Rekomendasi Gemini tidak tersedia dalam mode offline. Pemilahan dialihkan ke panduan lokal."
-    : result?.data.action_recommendation ?? "Rekomendasi tidak tersedia.";
+  const recommendationText = getExecutionRecommendation(result);
 
   return (
     <div className={`min-h-screen rounded-[32px] border border-white/10 p-4 shadow-[0_20px_80px_rgba(5,150,105,0.15)] backdrop-blur-2xl sm:p-6 ${isB3Alert ? "bg-rose-950/80" : "bg-slate-950/70"}`}>
@@ -420,7 +474,12 @@ export default function ScannerPage() {
 
               <div className="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-black/50 p-5">
                 <p className="text-xs font-bold uppercase tracking-wider text-sky-400">Rekomendasi eksekusi</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{recommendationText}</p>
+                {isAmbiguousAlert && (
+                  <p className="mt-2 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+                    Catatan: Akurasi visual model di bawah standar (85%). Mohon lengkapi kuesioner Verifikasi Mandiri di bawah untuk validasi data.
+                  </p>
+                )}
+                <p className="mt-3 text-sm leading-6 text-slate-300">{recommendationText}</p>
               </div>
 
               {isB3Alert && (
