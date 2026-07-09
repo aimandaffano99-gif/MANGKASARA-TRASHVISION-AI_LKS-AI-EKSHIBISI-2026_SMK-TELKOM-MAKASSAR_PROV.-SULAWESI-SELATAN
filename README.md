@@ -1,45 +1,53 @@
-# EwakoVision AI 🍃
+# 🌍 Mangkasara TrashVision AI
 
-EwakoVision AI adalah sistem pendeteksi dan klasifikasi sampah hibrida (Offline + Online) menggunakan **YOLOv8 Object Detection** untuk pelacakan koordinat sampah secara *real-time* (Bounding Box) dan **Gemini 1.5 Flash** untuk menyusun panduan rekomendasi daur ulang pintar.
+**Mangkasara TrashVision AI** (sebelumnya EwakoVision AI) adalah sistem pendeteksi, klasifikasi, dan manajemen sampah hibrida (Offline + Online) yang dirancang khusus untuk LKS AI Eksibisi 2026 tingkat Provinsi Sulawesi Selatan.
 
-Proyek ini dibangun untuk kompetisi LKS, menggunakan **Next.js** untuk Frontend dan **FastAPI (Python)** untuk Backend AI.
+Aplikasi ini menggunakan **YOLOv8 Object Detection** untuk pelacakan koordinat sampah secara real-time (*Bounding Box*), **Gemini 1.5 Flash** untuk menyusun panduan rekomendasi eksekusi cerdas, serta ekosistem dashboard **Next.js** untuk manajemen logistik spasial (GIS) armada truk sampah terpilah di Kota Makassar.
 
 ---
 
 ## 🛠️ Persyaratan Sistem
 Sebelum memulai, pastikan komputer Anda telah terinstal:
-- [Node.js](https://nodejs.org/en/) (Versi 18 atau lebih baru)
-- [Python](https://www.python.org/downloads/) (Versi 3.9 hingga 3.12)
-- Git
-
-## 🚀 Cara Menjalankan Proyek (Setup Guide)
-
-Karena file biner berukuran besar dan kunci rahasia (*API Key*) tidak diunggah ke GitHub, ikuti langkah-langkah berikut untuk membangun ulang lingkungan kerja di laptop Anda setelah melakukan `git clone`.
-
-### Langkah 1: Kloning Repositori
-```bash
-git clone https://github.com/MuhAlifAnhar/ewakoAI.git
-cd ewakoAI
-```
+* Node.js (Versi 18 atau lebih baru)
+* Python (Versi 3.9 hingga 3.12)
+* Git
 
 ---
 
-### Langkah 2: Setup Frontend (Next.js)
-Buka terminal baru, lalu jalankan perintah berikut untuk menginstal semua pustaka antarmuka web:
+## 🚀 Cara Menjalankan Proyek (Setup Guide)
+
+### Langkah 1: Kloning Repositori Utama LKS
+```bash
+git clone https://github.com/aimandaffano99-gif/MANGKASARA-TRASHVISION-AI_LKS-AI-EKSHIBISI-2026_SMK-TELKOM-MAKASSAR_PROV.-SULAWESI-SELATAN.git
+cd MANGKASARA-TRASHVISION-AI_LKS-AI-EKSHIBISI-2026_SMK-TELKOM-MAKASSAR_PROV.-SULAWESI-SELATAN
+```
+
+### Langkah 2: Setup & Environment Frontend (Next.js)
+
+1. Masuk ke folder frontend dan instal semua pustaka antarmuka web:
+
 ```bash
 cd frontend
 npm install
 ```
-Setelah instalasi selesai, jalankan server pengembangan:
+
+2. Buat file `.env.local` di dalam folder `frontend/` untuk mengaktifkan fitur pencatatan logging data sampah:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=masukkan_url_supabase_project_anda
+NEXT_PUBLIC_SUPABASE_ANON_KEY=masukkan_anon_key_supabase_anda
+```
+
+3. Jalankan server pengembangan frontend:
+
 ```bash
 npm run dev
 ```
-👉 *Frontend akan berjalan di `http://localhost:3000`*
 
----
+👉 Frontend dapat diakses melalui **http://localhost:3000** (Menu Navigasi Sidebar: Dashboard, AI Scanner, Peta GIS, Waste Wallet, Tukar Poin).
 
-### Langkah 3: Setup Backend (FastAPI & YOLOv8)
-Buka tab terminal baru (biarkan terminal frontend tetap berjalan), lalu buat *Virtual Environment* Python agar pustaka AI tidak bentrok dengan komputer Anda:
+### Langkah 3: Setup Backend AI (FastAPI & YOLOv8)
+Buka tab terminal baru (biarkan terminal frontend tetap berjalan), lalu buat dan aktifkan *Virtual Environment* Python:
 
 ```bash
 cd backend
@@ -49,53 +57,43 @@ python -m venv venv
 
 # Mengaktifkan Virtual Environment (Windows)
 venv\Scripts\activate
+# (Untuk Mac/Linux gunakan: source venv/bin/activate)
 ```
-*(Catatan: Jika Anda menggunakan Mac/Linux, gunakan `python3 -m venv venv` dan `source venv/bin/activate`)*
 
-Setelah Venv aktif (terlihat tulisan `(venv)` di terminal), instal semua pustaka AI (YOLO, OpenCV, dsb):
+Setelah Virtual Environment aktif (ditandai dengan munculnya teks `(venv)` di terminal), instal dependensi model AI:
+
 ```bash
 pip install -r requirements.txt
 ```
 
----
+### Langkah 4: Setup API Key (Gemini AI di Backend)
 
-### Langkah 4: Setup API Key (Gemini AI)
-Untuk mengaktifkan fitur cerdas Gemini penyusun saran daur ulang:
 1. Di dalam folder `backend/`, buat sebuah file baru bernama `.env`.
-2. Buka file `.env` tersebut dan masukkan API Key Gemini Anda seperti format di bawah ini:
-```env
-GEMINI_API_KEY=AIzaSy...masukkan_api_key_anda_disini...
+2. Buka file `.env` tersebut dan masukkan API Key Gemini Anda:
+
+```bash
+GEMINI_API_KEY=AIzaSy...masukkan_api_key_gemini_anda_disini...
 ```
 
----
-
 ### Langkah 5: Jalankan Server AI Backend
-Pastikan Anda masih berada di dalam folder `backend` dan Venv masih aktif. Jalankan server dengan perintah:
+Pastikan Virtual Environment masih aktif, lalu jalankan server Uvicorn:
+
 ```bash
 uvicorn main:app --reload
 ```
-👉 *Backend akan berjalan di `http://127.0.0.1:8000`*
 
-Saat pertama kali dijalankan dan tombol "Analisis Sampah" ditekan di browser, backend akan secara otomatis mengunduh file `yolov8n.pt` dari internet (sekitar 6 MB).
+👉 Backend AI akan berjalan di **http://127.0.0.1:8000**. Saat tombol **"Analisis Sampah"** ditekan pertama kali di aplikasi, backend akan otomatis mengunduh arsitektur model dasar `yolov8n.pt` (sekitar 6 MB).
 
-### 🎯 Menggunakan Model Kustom (Opsional)
-Jika Anda memiliki model YOLOv8 khusus yang telah dilatih (misalnya dari Roboflow), cukup ubah nama file model Anda menjadi `trash_yolov8.pt` lalu paste/letakkan di dalam folder `backend/`. Kode secara otomatis akan memuat model kustom Anda.
-
----
-**Selesai!** Buka browser Anda di `http://localhost:3000`, izinkan akses kamera, dan selamat bereksperimen dengan EwakoVision AI!
-
----
+## 🎯 Menggunakan Model Kustom (Opsional)
+Jika Anda memiliki model YOLOv8 hasil training kustom (misal dari Roboflow untuk tipe-tipe sampah spesifik), cukup ubah nama file bobot model Anda menjadi `trash_yolov8.pt` lalu letakkan langsung di dalam folder `backend/`. Sistem akan mendeteksi dan memuat model kustom tersebut secara otomatis.
 
 ## 🐳 Menjalankan Backend via Docker (Alternatif)
-Jika Anda lebih familiar dengan Docker, backend bisa dijalankan tanpa perlu menginstal Python atau virtual environment:
+Jika Anda tidak ingin mengonfigurasi environment Python lokal, backend dapat dieksekusi langsung melalui Docker Container:
 
 ```bash
 cd backend
-
-# Build Docker image
-docker build -t ewako-backend .
-
-# Jalankan container (ganti YOUR_API_KEY dengan API Key Gemini Anda)
-docker run -p 8000:8000 -e GEMINI_API_KEY=YOUR_API_KEY ewako-backend
+# Build Docker Image
+docker build -t mangkasara-backend .
+# Jalankan Container
+docker run -p 8000:8000 -e GEMINI_API_KEY=YOUR_API_KEY mangkasara-backend
 ```
-👉 *Backend akan berjalan di `http://localhost:8000`*
